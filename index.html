@@ -87,7 +87,7 @@
   <main class="container">
     <!-- Left: Image + Avatar -->
     <section class="card hero">
-      <img src="redfort.jpg" alt="Red Fort" onerror="this.src='data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 800 450\'><defs><linearGradient id=\'g\' x1=\'0\' x2=\'1\'><stop stop-color=\'%23c04848\'/><stop offset=\'1\' stop-color=\'%238f3333\'/></linearGradient></defs><rect width=\'100%\' height=\'100%\' fill=\'url(%23g)\'/><text x=\'50%\' y=\'50%\' dominant-baseline=\'middle\' text-anchor=\'middle\' fill=\'white\' font-family=\'Arial, sans-serif\' font-size=\'42\'>Red Fort</text></svg>');" />
+      <img src="redfort.jpg" alt="Red Fort" />
 
       <div class="avatarWrap">
         <!-- Simple SVG talking avatar -->
@@ -126,7 +126,6 @@
 
       <div class="footer pad">
         <span class="chip">Scan QR → Page opens → Listen & Watch</span>
-        <div class="hint">Tip: replace <code>redfort.jpg</code> with your own image file.</div>
       </div>
     </section>
 
@@ -137,22 +136,10 @@
 
       <div id="textDisplay" class="textbox" aria-live="polite"></div>
 
-      <details style="margin-top:10px">
-        <summary style="cursor:pointer; color:var(--accent)">✏️ Edit narration text (optional)</summary>
-        <div class="control" style="margin-top:10px">
-          <label for="textInput">You can edit the text below. Click “Apply Text” to update the narration above.</label>
-          <textarea id="textInput"></textarea>
-          <div class="btnrow">
-            <button class="btn success" id="applyTextBtn">Apply Text</button>
-          </div>
-        </div>
-      </details>
-
       <div class="controls">
         <div class="control">
           <label for="voiceSelect">Voice</label>
           <select id="voiceSelect"></select>
-          <div class="hint">Prefer English voices (en-IN, en-GB, or en-US). If empty, click Play once and reopen the list.</div>
         </div>
         <div class="control">
           <label for="rate">Rate (speed)</label>
@@ -168,39 +155,19 @@
         <button class="btn" id="resumeBtn">⏯️ Resume</button>
         <button class="btn stop" id="stopBtn">⏹️ Stop</button>
       </div>
-
-      <div class="hint">Some mobile browsers require a user tap before audio starts. Press Play to begin.</div>
     </section>
   </main>
 
   <script>
-    // -----------------------
-    // 1) Default narration text (English)
-    // -----------------------
     const DEFAULT_TEXT = `The Red Fort, also known as Lal Qila, is a historic fort in Old Delhi, India. Constructed by the Mughal emperor Shah Jahan in the seventeenth century, it is built from striking red sandstone and became the seat of Mughal power. Today, the Red Fort is a UNESCO World Heritage Site and a symbol of India's independence. On every Independence Day, August 15, the Prime Minister addresses the nation from its ramparts and the national flag is raised. Inside the complex are palaces, audience halls, museums, and beautiful gardens that reflect a blend of Persian, Timurid, and Indian architectural traditions.`;
 
     const textDisplay = document.getElementById('textDisplay');
-    const textInput   = document.getElementById('textInput');
-    const applyTextBtn= document.getElementById('applyTextBtn');
-
-    // Render text as word spans for highlighting during speech
     function renderText(text){
-      const words = text.replace(/\n/g, ' ').split(/(\s+)/); // keep spaces
-      textDisplay.innerHTML = words.map(w => /\s+/.test(w) ? w : `<span class="word">${escapeHtml(w)}</span>`).join('');
+      const words = text.replace(/\n/g, ' ').split(/(\s+)/);
+      textDisplay.innerHTML = words.map(w => /\s+/.test(w) ? w : `<span class="word">${w}</span>`).join('');
     }
-    function escapeHtml(s){ return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c])); }
-
-    // Initialize content
-    textInput.value = DEFAULT_TEXT;
     renderText(DEFAULT_TEXT);
 
-    applyTextBtn.addEventListener('click', ()=>{
-      renderText(textInput.value.trim() || DEFAULT_TEXT);
-    });
-
-    // -----------------------
-    // 2) Speech Synthesis setup
-    // -----------------------
     const synth = window.speechSynthesis;
     const voiceSelect = document.getElementById('voiceSelect');
     const rate  = document.getElementById('rate');
@@ -213,110 +180,111 @@
     let voices = [];
     function populateVoices(){
       voices = synth.getVoices().sort((a,b)=> a.lang.localeCompare(b.lang));
-      const options = voices.map((v,i)=>{
-        const label = `${v.name} — ${v.lang}${v.localService ? ' (local)' : ''}`;
-        return `<option value="${i}">${label}</option>`;
-      });
-      voiceSelect.innerHTML = options.join('');
-
-      // Prefer English voices (en-IN > en-GB > en-US) else fallback to the first
+      voiceSelect.innerHTML = voices.map((v,i)=> `<option value="${i}">${v.name} — ${v.lang}</option>`).join('');
       let idx = voices.findIndex(v=>/en-?IN/i.test(v.lang));
       if(idx < 0) idx = voices.findIndex(v=>/en-?GB/i.test(v.lang));
       if(idx < 0) idx = voices.findIndex(v=>/en-?US/i.test(v.lang));
       if(idx < 0) idx = 0;
       if(idx >= 0) voiceSelect.value = String(idx);
     }
-
     populateVoices();
-    if (typeof speechSynthesis !== 'undefined' && speechSynthesis.onvoiceschanged !== undefined){
+    if (speechSynthesis.onvoiceschanged !== undefined){
       speechSynthesis.onvoiceschanged = populateVoices;
     }
 
-    // -----------------------
-    // 3) Talking avatar helpers
-    // -----------------------
     const avatar = document.querySelector('.avatar');
     function setTalking(is){
       if(is) avatar.classList.add('talking'); else avatar.classList.remove('talking');
     }
 
-    // Highlight logic using boundary events
     let wordSpans = [];
     function collectWordSpans(){ wordSpans = Array.from(textDisplay.querySelectorAll('.word')); }
     collectWordSpans();
-    const observer = new MutationObserver(()=> collectWordSpans());
-    observer.observe(textDisplay, {childList:true, subtree:true});
 
     function clearHighlights(){ wordSpans.forEach(s=>s.classList.remove('active')); }
-
     function highlightByCharIndex(charIndex){
-      // Build a simple map of cumulative char length to word index
       let sum = 0; let targetIndex = 0;
       for(let i=0;i<wordSpans.length;i++){
         const w = wordSpans[i].textContent || '';
-        sum += w.length + 1; // +1 approx for space
+        sum += w.length + 1;
         if(charIndex < sum){ targetIndex = i; break; }
       }
       clearHighlights();
       if(wordSpans[targetIndex]) wordSpans[targetIndex].classList.add('active');
     }
 
-    // -----------------------
-    // 4) Speak / Pause / Resume / Stop
-    // -----------------------
     let currentUtterance = null;
-
     function speak(){
       const text = textDisplay.textContent.trim();
       if(!text){ return; }
-
       if(synth.speaking){ synth.cancel(); }
-
       const u = new SpeechSynthesisUtterance(text);
       currentUtterance = u;
-
       const v = voices[Number(voiceSelect.value)] || null;
-      if(v){ u.voice = v; u.lang = v.lang; }
-      else { u.lang = 'en-IN'; }
+      if(v){ u.voice = v; u.lang = v.lang; } else { u.lang = 'en-IN'; }
       u.rate = Number(rate.value);
       u.pitch = Number(pitch.value);
-
       u.onstart = ()=>{ setTalking(true); clearHighlights(); };
       u.onend   = ()=>{ setTalking(false); clearHighlights(); };
       u.onerror = ()=>{ setTalking(false); };
-      u.onboundary = (e)=>{
-        if(e.name === 'word' || e.charIndex !== undefined){
-          highlightByCharIndex(e.charIndex || 0);
-          // micro jaw motion accent
-          const mouth = document.getElementById('mouth');
-          if(mouth){
-            mouth.style.transform = 'scaleY(1.35)';
-            setTimeout(()=> mouth.style.transform = '', 80);
-          }
-        }
-      };
-// -----------------------
-// 5) Try autoplay on page load
-// -----------------------
-window.addEventListener("load", () => {
-  // Small delay so voices load properly
-  setTimeout(() => {
-    try {
-      if (!speechSynthesis.speaking) {
-        speak();
-      }
-    } catch (err) {
-      console.warn("Autoplay blocked by browser:", err);
-    }
-  }, 800);
-});
-      synth.speak(u); // speaks the entire text from start to finish
+      u.onboundary = (e)=>{ highlightByCharIndex(e.charIndex || 0); };
+      synth.speak(u);
     }
 
     playBtn.addEventListener('click', speak);
     pauseBtn.addEventListener('click', ()=> synth.pause());
     resumeBtn.addEventListener('click', ()=> synth.resume());
     stopBtn.addEventListener('click', ()=>{ synth.cancel(); setTalking(false); clearHighlights(); });
+
+    // -----------------------
+    // 5) Autoplay with fallback overlay
+    // -----------------------
+    function tryAutoplay() {
+      setTimeout(() => {
+        if (!speechSynthesis.speaking) {
+          speak();
+          setTimeout(() => {
+            if (!speechSynthesis.speaking) {
+              showStartOverlay();
+            }
+          }, 1500);
+        }
+      }, 800);
+    }
+
+    function showStartOverlay() {
+      if (document.getElementById("startOverlay")) return;
+      const overlay = document.createElement("div");
+      overlay.id = "startOverlay";
+      overlay.style.position = "fixed";
+      overlay.style.top = 0;
+      overlay.style.left = 0;
+      overlay.style.width = "100%";
+      overlay.style.height = "100%";
+      overlay.style.background = "rgba(15,18,38,0.9)";
+      overlay.style.display = "flex";
+      overlay.style.alignItems = "center";
+      overlay.style.justifyContent = "center";
+      overlay.style.zIndex = 9999;
+      const btn = document.createElement("button");
+      btn.textContent = "🔊 Tap to Listen";
+      btn.style.padding = "18px 26px";
+      btn.style.fontSize = "20px";
+      btn.style.borderRadius = "14px";
+      btn.style.border = "none";
+      btn.style.cursor = "pointer";
+      btn.style.background = "linear-gradient(90deg, #7c5cff, #9a7cff)";
+      btn.style.color = "#fff";
+      btn.style.fontWeight = "700";
+      btn.addEventListener("click", () => {
+        overlay.remove();
+        speak();
+      });
+      overlay.appendChild(btn);
+      document.body.appendChild(overlay);
+    }
+
+    window.addEventListener("load", tryAutoplay);
   </script>
 </body>
 </html>
