@@ -295,7 +295,21 @@
           }
         }
       };
-
+// -----------------------
+// 5) Try autoplay on page load
+// -----------------------
+window.addEventListener("load", () => {
+  // Small delay so voices load properly
+  setTimeout(() => {
+    try {
+      if (!speechSynthesis.speaking) {
+        speak();
+      }
+    } catch (err) {
+      console.warn("Autoplay blocked by browser:", err);
+    }
+  }, 800);
+});
       synth.speak(u); // speaks the entire text from start to finish
     }
 
