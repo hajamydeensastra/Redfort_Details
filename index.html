@@ -155,13 +155,27 @@
       const v = voices.find(v=>/en-?IN/i.test(v.lang)) || voices.find(v=>/en-?GB/i.test(v.lang)) || voices.find(v=>/en-?US/i.test(v.lang));
       if(v){ u.voice = v; u.lang = v.lang; } else { u.lang = 'en-IN'; }
       u.rate = 1; u.pitch = 1;
-      u.onstart = ()=>{ setTalking(true); clearHighlights(); startFallbackTimer(u); };
-      u.onend   = ()=>{ setTalking(false); clearHighlights(); stopFallbackTimer(); };
-      u.onerror = ()=>{ setTalking(false); stopFallbackTimer(); };
 
-      if('onboundary' in u){
+      u.onstart = ()=>{
+        setTalking(true);
+        clearHighlights();
+        startFallbackTimer();
+      };
+
+      u.onend   = ()=>{
+        setTalking(false);
+        clearHighlights();
+        stopFallbackTimer();
+      };
+
+      u.onerror = ()=>{
+        setTalking(false);
+        stopFallbackTimer();
+      };
+
+      if(u.hasOwnProperty("onboundary")){
         u.onboundary = (e)=>{
-          if(e.name === 'word' || e.name === 'sentence'){
+          if(e.name === 'word'){
             highlightByCharIndex(e.charIndex || 0);
           }
         }
@@ -180,11 +194,10 @@
       highlightWord(targetIndex);
     }
 
-    // ---- Timer fallback for iOS/Android ----
-    function startFallbackTimer(utterance){
-      if('onboundary' in utterance) return; // supported, skip fallback
+    function startFallbackTimer(){
       let i = 0;
-      const avgTimePerWord = 350; // ms (approx)
+      const avgTimePerWord = 350; 
+      stopFallbackTimer();
       timerInterval = setInterval(()=>{
         if(i >= wordSpans.length){ clearInterval(timerInterval); return; }
         highlightWord(i);
@@ -196,15 +209,18 @@
     }
 
     playBtn.addEventListener('click', speak);
-    stopBtn.addEventListener('click', ()=>{ synth.cancel(); setTalking(false); clearHighlights(); stopFallbackTimer(); });
+    stopBtn.addEventListener('click', ()=>{
+      synth.cancel();
+      setTalking(false);
+      clearHighlights();
+      stopFallbackTimer();
+    });
 
-    // Try autoplay on load
     window.addEventListener('load', ()=>{
       try{
         speak();
       }catch(err){ overlay.style.display='flex'; }
     });
-
     overlay.addEventListener('click', ()=>{ overlay.style.display='none'; speak(); });
   </script>
 </body>
