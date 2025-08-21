@@ -10,6 +10,12 @@
       color:#fff;
       font-family:Arial, sans-serif;
       padding:20px;
+      text-align:center;
+    }
+    img {
+      max-width:300px;
+      border-radius:16px;
+      margin-bottom:20px;
     }
     #textDisplay span.active {
       background:yellow;
@@ -37,6 +43,9 @@
   </style>
 </head>
 <body>
+
+  <!-- 🔴 உங்கள் image -->
+  <img src="redfort.jpg" alt="Red Fort"/>
 
   <h2>Cross Platform Text-to-Speech</h2>
   <div id="textDisplay"></div>
@@ -101,8 +110,8 @@
     // ---- Fallback timer (mobile highlight) ----
     function startFallbackTimer(){
       stopFallbackTimer();
-      const rate = 1; // if you have rate control, replace here
-      // baseline 3.8 words/sec, reduce 25% speed
+      const rate = 1;
+      // baseline 3.8 words/sec, reduced 25% speed
       const baseWordsPerSec = 3.8 * rate * 0.75;
       const intervalMs = Math.max(90, Math.round(1000 / baseWordsPerSec));
 
@@ -141,7 +150,6 @@
       utter.lang = utter.voice ? utter.voice.lang : "en-US";
 
       utter.onstart = ()=>{
-        // Always start fallback for mobile
         if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
           startFallbackTimer();
         }
@@ -157,7 +165,6 @@
         stopFallbackTimer();
       };
 
-      // Desktop browsers: real highlight
       utter.onboundary = (event)=>{
         if(event.name==="word" || event.charIndex!==undefined){
           usingBoundaryEvents = true;
@@ -170,9 +177,9 @@
 
     function playOrResume(){
       if(synth.paused){
-        synth.resume();  // resume if paused
+        synth.resume();
       } else if(!synth.speaking){
-        speak();        // start fresh if nothing speaking
+        speak();
       }
     }
 
@@ -188,7 +195,6 @@
       stopFallbackTimer();
     }
 
-    // Autoplay attempt
     function tryAutoplay(){
       setTimeout(()=>{
         speak();
