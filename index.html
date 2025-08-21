@@ -1,58 +1,79 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Red Fort – QR Landing Page (Updated)</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Red Fort – QR Landing Page (English)</title>
   <style>
-    :root{ --bg:#0f1226; --card:#15193a; --accent:#7c5cff; --text:#f2f3f7; --muted:#aeb3c2 }
+    :root{
+      --bg: #0f1226;
+      --card: #15193a;
+      --accent: #7c5cff;
+      --accent-2: #25d0a4;
+      --text: #f2f3f7;
+      --muted: #aeb3c2;
+      --danger: #ff5c7c;
+    }
     *{box-sizing:border-box}
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans",Arial;color:var(--text);background:radial-gradient(1200px 600px at 10% -20%, rgba(124,92,255,.35), transparent 60%), radial-gradient(800px 400px at 120% 10%, rgba(37,208,164,.25), transparent 60%), var(--bg);min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px}
-    .container{max-width:1100px;width:100%;display:grid;gap:20px;grid-template-columns:1.2fr 1fr}
-    @media(max-width:900px){.container{grid-template-columns:1fr}}
-    .card{background:linear-gradient(180deg,#1b2048,#121533);border:1px solid rgba(255,255,255,.06);border-radius:24px;box-shadow:0 20px 60px rgba(0,0,0,.45);overflow:hidden}
-    .pad{padding:20px}
-    .hero{display:grid;grid-template-rows:auto 1fr; height:100%}
-    .hero img{width:100%;height:320px;object-fit:cover;border-bottom:1px solid rgba(255,255,255,.06)}
+    body{
+      margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans", "Helvetica Neue", Arial;
+      color:var(--text); background:
+        radial-gradient(1200px 600px at 10% -20%, rgba(124,92,255,.35), transparent 60%),
+        radial-gradient(800px 400px at 120% 10%, rgba(37,208,164,.25), transparent 60%),
+        var(--bg);
+      min-height:100dvh; display:flex; align-items:center; justify-content:center; padding:24px;
+    }
+    .container{ max-width:1100px; width:100%; display:grid; gap:20px; grid-template-columns: 1.2fr 1fr; }
+    @media (max-width: 900px){ .container{ grid-template-columns: 1fr; } }
 
-    .title{font-size:28px;font-weight:800;margin:0 0 8px}
-    .subtitle{color:var(--muted);margin:0 0 12px;font-size:14px}
+    .card{ background: linear-gradient(180deg, #1b2048, #121533); border:1px solid rgba(255,255,255,.06); border-radius:24px; box-shadow: 0 20px 60px rgba(0,0,0,.45); overflow:hidden }
+    .pad{ padding:20px }
 
-    .textbox{line-height:1.75;font-size:16px;color:#e8e9f0}
-    .textbox .word{padding:2px 3px;border-radius:6px;transition:background .15s ease,color .15s ease}
-    .textbox .word.active{background:rgba(124,92,255,.24);color:#fff}
+    .hero{ display:grid; grid-template-rows: auto 1fr auto; height:100%; }
+    .hero img{ width:100%; height:320px; object-fit:cover; border-bottom:1px solid rgba(255,255,255,.06) }
 
-    .controls{display:flex;gap:10px;margin-top:16px}
-    .btn{cursor:pointer;user-select:none;border:1px solid rgba(255,255,255,.12);background:#0f1334;color:#fff;padding:12px 14px;border-radius:14px;font-weight:600;transition:transform .06s ease,background .2s}
-    .btn.primary{background:linear-gradient(90deg,var(--accent),#9a7cff);border:none}
-    .btn.stop{background:linear-gradient(90deg,#ff6b65,#ff5c7c);border:none}
+    .title{ font-size:28px; font-weight:800; margin:0 0 8px }
+    .subtitle{ color:var(--muted); margin:0 0 12px; font-size:14px }
 
-    /* Avatar (old style) */
-    .avatarWrap{display:flex;align-items:center;justify-content:center;padding:16px}
-    .avatar{width:260px;height:260px;filter:drop-shadow(0 20px 30px rgba(0,0,0,.45))}
-    .face{fill:#ffcba1}
-    .hair{fill:#20243d}
-    .eyes{fill:#11131f}
-    .mouth{fill:#e8436b;transform-origin:130px 160px}
-    .teeth{fill:#fff}
-    .blink .eyeLid{animation:blink 6s infinite}
-    .blink .eyeLid2{animation:blink 6.2s infinite}
-    @keyframes blink{0%,97%,100%{transform:scaleY(1)}98%{transform:scaleY(0.05)}}
-    .talking .mouth{animation:talk .12s infinite alternate}
-    @keyframes talk{from{transform:scaleY(0.6)}to{transform:scaleY(1.2)}}
+    /* Text display + highlight */
+    .textbox{ line-height:1.75; font-size:16px; color:#e8e9f0 }
+    .textbox .word{ padding:2px 3px; border-radius:6px; transition:background .15s ease, color .15s ease }
+    .textbox .word.active{ background: rgba(124,92,255,.24); color: #fff }
 
-    .gestureOverlay{position:fixed;inset:0;display:flex;align-items:flex-end;justify-content:center;padding:20px;pointer-events:none}
-    .gestureBtn{pointer-events:auto;background:linear-gradient(90deg,var(--accent),#9a7cff);border:none;color:#fff;padding:12px 20px;border-radius:14px;font-weight:700;box-shadow:0 8px 30px rgba(124,92,255,.18)}
-    .gestureNotice{color:var(--muted);font-size:13px;margin-top:8px;text-align:center}
+    .btnrow{ display:flex; gap:10px; flex-wrap:wrap; margin-top:16px }
+    .btn{ cursor:pointer; user-select:none; border:1px solid rgba(255,255,255,.12); background:#0f1334; color:#fff; padding:12px 14px; border-radius:14px; font-weight:600; transition:transform .06s ease, background .2s }
+    .btn:hover{ background:#13183f }
+    .btn:active{ transform:translateY(1px) }
+    .btn.primary{ background: linear-gradient(90deg, var(--accent), #9a7cff); border:none }
+    .btn.stop{ background: linear-gradient(90deg, #ff6b65, var(--danger)); border:none }
+
+    /* Avatar (SVG) */
+    .avatarWrap{ display:flex; align-items:center; justify-content:center; padding:16px }
+    .avatar{ width:260px; height:260px; filter: drop-shadow(0 20px 30px rgba(0,0,0,.45)); }
+    .face{ fill:#ffcba1 }
+    .hair{ fill:#20243d }
+    .eyes{ fill:#11131f }
+    .mouth{ fill:#e8436b; transform-origin: 130px 160px }
+    .teeth{ fill:#fff }
+
+    .blink .eyeLid{ animation: blink 6s infinite }
+    .blink .eyeLid2{ animation: blink 6.2s infinite }
+    @keyframes blink{ 0%, 97%, 100% { transform: scaleY(1) } 98% { transform: scaleY(0.05) } }
+
+    .talking .mouth{ animation: talk .12s infinite alternate }
+    @keyframes talk{ from{ transform: scaleY(0.6) } to{ transform: scaleY(1.2) } }
+
+    /* Overlay for autoplay permission */
+    #tapOverlay{ position:fixed; inset:0; background:rgba(0,0,0,.75); display:flex; align-items:center; justify-content:center; color:#fff; font-size:20px; font-weight:600; z-index:999; }
   </style>
 </head>
 <body>
   <main class="container">
-    <!-- Left: Image + avatar -->
+    <!-- Left: Image + Avatar -->
     <section class="card hero">
       <img src="redfort.jpg" alt="Red Fort" />
       <div class="avatarWrap">
-        <!-- Old talking avatar -->
+        <!-- Simple SVG talking avatar -->
         <svg class="avatar blink" viewBox="0 0 260 260" aria-hidden="true">
           <circle cx="130" cy="130" r="110" fill="#1a1f49"/>
           <circle cx="130" cy="120" r="90" class="face"/>
@@ -70,50 +91,85 @@
       </div>
     </section>
 
-    <!-- Right: Text + minimal controls -->
+    <!-- Right: Text + TTS Controls -->
     <section class="card pad">
       <h1 class="title">Red Fort</h1>
       <p class="subtitle">A historic red sandstone fort in Delhi, India</p>
+
       <div id="textDisplay" class="textbox"></div>
-      <div class="controls">
+
+      <div class="btnrow">
         <button class="btn primary" id="playBtn">▶️ Play</button>
         <button class="btn stop" id="stopBtn">⏹️ Stop</button>
       </div>
     </section>
   </main>
 
-  <div id="gestureOverlay" class="gestureOverlay" style="display:none">
-    <div style="text-align:center">
-      <button id="gestureBtn" class="gestureBtn">Tap to enable audio</button>
-      <div class="gestureNotice">(required on some mobile browsers — one tap and speech will start)</div>
-    </div>
-  </div>
+  <div id="tapOverlay" style="display:none">Tap to enable audio 🔊</div>
 
   <script>
     const DEFAULT_TEXT = `The Red Fort, also known as Lal Qila, is a historic fort in Old Delhi, India. Constructed by the Mughal emperor Shah Jahan in the seventeenth century, it is built from striking red sandstone and became the seat of Mughal power. Today, the Red Fort is a UNESCO World Heritage Site and a symbol of India's independence. On every Independence Day, August 15, the Prime Minister addresses the nation from its ramparts and the national flag is raised. Inside the complex are palaces, audience halls, museums, and beautiful gardens that reflect a blend of Persian, Timurid, and Indian architectural traditions.`;
 
     const textDisplay = document.getElementById('textDisplay');
     function renderText(text){
-      const words = text.replace(/\n/g,' ').split(/(\s+)/);
+      const words = text.replace(/\n/g, ' ').split(/(\s+)/);
       textDisplay.innerHTML = words.map(w => /\s+/.test(w) ? w : `<span class="word">${w}</span>`).join('');
     }
     renderText(DEFAULT_TEXT);
 
     const synth = window.speechSynthesis;
-    let voices = [];
-    function loadVoices(){ voices = synth.getVoices().sort((a,b)=> a.lang.localeCompare(b.lang)); }
-    loadVoices();
-    if(speechSynthesis.onvoiceschanged !== undefined) speechSynthesis.onvoiceschanged = loadVoices;
+    const playBtn   = document.getElementById('playBtn');
+    const stopBtn   = document.getElementById('stopBtn');
+    const overlay   = document.getElementById('tapOverlay');
 
-    const playBtn = document.getElementById('playBtn');
-    const stopBtn = document.getElementById('stopBtn');
+    let voices = [];
+    function populateVoices(){
+      voices = synth.getVoices().sort((a,b)=> a.lang.localeCompare(b.lang));
+    }
+    populateVoices();
+    if (speechSynthesis.onvoiceschanged !== undefined){
+      speechSynthesis.onvoiceschanged = populateVoices;
+    }
+
     const avatar = document.querySelector('.avatar');
+    function setTalking(is){
+      if(is) avatar.classList.add('talking'); else avatar.classList.remove('talking');
+    }
 
     let wordSpans = [];
     function collectWordSpans(){ wordSpans = Array.from(textDisplay.querySelectorAll('.word')); }
     collectWordSpans();
 
     function clearHighlights(){ wordSpans.forEach(s=>s.classList.remove('active')); }
+    function highlightWord(i){ clearHighlights(); if(wordSpans[i]) wordSpans[i].classList.add('active'); }
+
+    let currentUtterance = null;
+    let timerInterval = null;
+
+    function speak(){
+      const text = textDisplay.textContent.trim();
+      if(!text){ return; }
+      if(synth.speaking){ synth.cancel(); }
+      const u = new SpeechSynthesisUtterance(text);
+      currentUtterance = u;
+      const v = voices.find(v=>/en-?IN/i.test(v.lang)) || voices.find(v=>/en-?GB/i.test(v.lang)) || voices.find(v=>/en-?US/i.test(v.lang));
+      if(v){ u.voice = v; u.lang = v.lang; } else { u.lang = 'en-IN'; }
+      u.rate = 1; u.pitch = 1;
+      u.onstart = ()=>{ setTalking(true); clearHighlights(); startFallbackTimer(u); };
+      u.onend   = ()=>{ setTalking(false); clearHighlights(); stopFallbackTimer(); };
+      u.onerror = ()=>{ setTalking(false); stopFallbackTimer(); };
+
+      if('onboundary' in u){
+        u.onboundary = (e)=>{
+          if(e.name === 'word' || e.name === 'sentence'){
+            highlightByCharIndex(e.charIndex || 0);
+          }
+        }
+      }
+
+      synth.speak(u);
+    }
+
     function highlightByCharIndex(charIndex){
       let sum = 0; let targetIndex = 0;
       for(let i=0;i<wordSpans.length;i++){
@@ -121,63 +177,35 @@
         sum += w.length + 1;
         if(charIndex < sum){ targetIndex = i; break; }
       }
-      clearHighlights();
-      if(wordSpans[targetIndex]) wordSpans[targetIndex].classList.add('active');
+      highlightWord(targetIndex);
     }
 
-    function chooseBestVoice(){
-      let idx = voices.findIndex(v=>/en-?IN/i.test(v.lang));
-      if(idx < 0) idx = voices.findIndex(v=>/en-?GB/i.test(v.lang));
-      if(idx < 0) idx = voices.findIndex(v=>/en-?US/i.test(v.lang));
-      if(idx < 0) idx = 0;
-      return voices[idx] || null;
+    // ---- Timer fallback for iOS/Android ----
+    function startFallbackTimer(utterance){
+      if('onboundary' in utterance) return; // supported, skip fallback
+      let i = 0;
+      const avgTimePerWord = 350; // ms (approx)
+      timerInterval = setInterval(()=>{
+        if(i >= wordSpans.length){ clearInterval(timerInterval); return; }
+        highlightWord(i);
+        i++;
+      }, avgTimePerWord);
+    }
+    function stopFallbackTimer(){
+      if(timerInterval){ clearInterval(timerInterval); timerInterval=null; }
     }
 
-    function setTalking(is){ if(is) avatar.classList.add('talking'); else avatar.classList.remove('talking'); }
+    playBtn.addEventListener('click', speak);
+    stopBtn.addEventListener('click', ()=>{ synth.cancel(); setTalking(false); clearHighlights(); stopFallbackTimer(); });
 
-    let currentUtterance = null;
-    function speak(){
-      const text = textDisplay.textContent.trim();
-      if(!text) return;
-      if(synth.speaking){ synth.cancel(); }
-      const u = new SpeechSynthesisUtterance(text);
-      currentUtterance = u;
-      const v = chooseBestVoice();
-      if(v){ u.voice = v; u.lang = v.lang; }
-      u.rate = 1; u.pitch = 1;
-      u.onstart = ()=>{ setTalking(true); clearHighlights(); };
-      u.onend = ()=>{ setTalking(false); clearHighlights(); };
-      u.onerror = ()=>{ setTalking(false); };
-      let lastTime = 0; const delay = 220;
-      u.onboundary = (e)=>{
-        const now = Date.now();
-        if(now - lastTime > delay){ highlightByCharIndex(e.charIndex || 0); lastTime = now; }
-      };
-      try{ synth.speak(u); return true; } catch(err){ return false; }
-    }
-
-    playBtn.addEventListener('click', ()=>{ const ok = speak(); if(!ok || (voices.length === 0 && !synth.speaking)) showGestureOverlay(); });
-    stopBtn.addEventListener('click', ()=>{ synth.cancel(); setTalking(false); clearHighlights(); hideGestureOverlay(); });
-
-    const overlay = document.getElementById('gestureOverlay');
-    const overlayBtn = document.getElementById('gestureBtn');
-    function showGestureOverlay(){ overlay.style.display = 'flex'; }
-    function hideGestureOverlay(){ overlay.style.display = 'none'; }
-
+    // Try autoplay on load
     window.addEventListener('load', ()=>{
-      setTimeout(()=>{
-        loadVoices();
-        const attempted = speak();
-        setTimeout(()=>{ if(!synth.speaking){ showGestureOverlay(); } }, 500);
-      },100);
+      try{
+        speak();
+      }catch(err){ overlay.style.display='flex'; }
     });
 
-    overlayBtn.addEventListener('click', ()=>{ speak(); hideGestureOverlay(); });
-    function firstGestureHandler(){ speak(); hideGestureOverlay(); window.removeEventListener('touchend', firstGestureHandler); window.removeEventListener('click', firstGestureHandler); }
-    window.addEventListener('touchend', firstGestureHandler, {passive:true});
-    window.addEventListener('click', firstGestureHandler, {passive:true});
-    const obs = new MutationObserver(()=>{ collectWordSpans(); });
-    obs.observe(textDisplay, {childList:true, subtree:true, characterData:true});
+    overlay.addEventListener('click', ()=>{ overlay.style.display='none'; speak(); });
   </script>
 </body>
 </html>
