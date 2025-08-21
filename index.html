@@ -1,175 +1,329 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Cross Platform TTS with Highlight</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Red Fort — TTS with Cross-platform Highlight</title>
   <style>
-    body {
-      background:#0f1226;
-      color:#fff;
-      font-family:Arial, sans-serif;
-      padding:20px;
+    :root{
+      --bg:#0f1226; --card:#15193a; --accent:#7c5cff; --text:#f2f3f7; --muted:#aeb3c2;
     }
-    #textDisplay span.active {
-      background:yellow;
-      color:#000;
+    *{box-sizing:border-box}
+    body{
+      margin:0; min-height:100vh; font-family:system-ui,Segoe UI,Roboto,Arial; background:var(--bg); color:var(--text);
+      display:flex; align-items:center; justify-content:center; padding:20px;
     }
-    #startOverlay {
-      position:fixed;
-      top:0;left:0;width:100%;height:100%;
-      background:rgba(15,18,38,0.9);
-      display:flex;
-      align-items:center;
-      justify-content:center;
+    .card{ width:100%; max-width:1000px; background:linear-gradient(180deg,#121533,#0d1230); border-radius:14px; padding:18px; box-shadow:0 20px 50px rgba(0,0,0,.6) }
+    h1{ margin:0 0 10px 0; font-size:20px }
+    #textDisplay{ line-height:1.7; font-size:16px; color:#e8e9f0; padding:12px; background:rgba(255,255,255,.02); border-radius:10px; min-height:120px }
+    #textDisplay span{ padding:2px 4px; border-radius:6px }
+    #textDisplay span.active{ background: rgba(124,92,255,.28); color:#fff; }
+    .controls{ margin-top:12px; display:flex; gap:8px; flex-wrap:wrap }
+    button{ padding:10px 14px; border-radius:10px; border:none; background:#0f1334; color:#fff; cursor:pointer; font-weight:600 }
+    button.primary{ background:linear-gradient(90deg,var(--accent),#9a7cff) }
+    button.stop{ background:linear-gradient(90deg,#ff6b65,#ff5c7c) }
+    .small{ font-size:13px; color:var(--muted); margin-top:8px }
+
+    /* overlay */
+    #startOverlay{
+      position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(10,12,25,0.92);
       z-index:9999;
     }
-    #startOverlay button {
-      padding:18px 26px;
-      font-size:20px;
-      border-radius:14px;
-      border:none;
-      cursor:pointer;
-      background:linear-gradient(90deg, #7c5cff, #9a7cff);
-      color:#fff;
-      font-weight:700;
-    }
+    #startOverlay button{ padding:18px 26px; font-size:18px; border-radius:14px; font-weight:800; background:linear-gradient(90deg,#7c5cff,#9a7cff) }
   </style>
 </head>
 <body>
+  <div class="card" role="main">
+    <h1>Red Fort — Narration (English)</h1>
 
-  <h2>Cross Platform Text-to-Speech</h2>
-  <div id="textDisplay"></div>
-  <br/>
-  <button onclick="speak()">Play</button>
-  <button onclick="stop()">Stop</button>
+    <div id="textDisplay" aria-live="polite"></div>
+
+    <div style="margin-top:10px">
+      <label class="small">Rate <input id="rate" type="range" min="0.6" max="1.4" step="0.05" value="1" /></label>
+      <label class="small" style="margin-left:16px">Pitch <input id="pitch" type="range" min="0.6" max="1.6" step="0.05" value="1" /></label>
+      <label class="small" style="margin-left:16px">Voice <select id="voiceSelect"></select></label>
+    </div>
+
+    <div class="controls">
+      <button id="playBtn" class="primary">▶️ Play / Resume</button>
+      <button id="pauseBtn">⏸️ Pause</button>
+      <button id="stopBtn" class="stop">⏹️ Stop</button>
+      <button id="debugBtn" style="display:none">Debug</button>
+    </div>
+
+    <div class="small">Note: iOS Safari and some Android builds don’t reliably provide word-boundary events. On those devices highlighting is approximate (timer-based).</div>
+  </div>
 
   <script>
-    const synth = window.speechSynthesis;
-    let voices = [];
-    let currentUtterance = null;
-    let wordSpans = [];
-    let fallbackTimer = null;
+  // -----------------------
+  // Full cross-platform TTS + highlight script
+  // -----------------------
 
-    const textDisplay = document.getElementById("textDisplay");
-    const text = "Hello! This is a test for cross platform text to speech with word highlighting.";
-    
-    // split into spans
-    function prepareText(t){
-      textDisplay.innerHTML = "";
-      wordSpans = t.split(" ").map(word=>{
-        const span = document.createElement("span");
-        span.textContent = word+" ";
-        textDisplay.appendChild(span);
-        return span;
-      });
+  // Default narration (you can replace or load dynamically)
+  const DEFAULT_TEXT = `The Red Fort, also known as Lal Qila, is a historic fort in Old Delhi, India. Constructed by the Mughal emperor Shah Jahan in the seventeenth century, it is built from striking red sandstone and became the seat of Mughal power. Today, the Red Fort is a UNESCO World Heritage Site and a symbol of India's independence. On every Independence Day, August 15, the Prime Minister addresses the nation from its ramparts and the national flag is raised. Inside the complex are palaces, audience halls, museums, and beautiful gardens that reflect a blend of Persian, Timurid, and Indian architectural traditions.`;
+
+  // Elements
+  const textDisplay = document.getElementById('textDisplay');
+  const playBtn = document.getElementById('playBtn');
+  const pauseBtn = document.getElementById('pauseBtn');
+  const stopBtn = document.getElementById('stopBtn');
+  const voiceSelect = document.getElementById('voiceSelect');
+  const rateEl = document.getElementById('rate');
+  const pitchEl = document.getElementById('pitch');
+
+  // Speech API objects
+  const synth = window.speechSynthesis;
+  let voices = [];
+  let currentUtterance = null;
+
+  // Highlight state
+  let wordSpans = [];            // array of <span> elements for words
+  let currentWordIndex = 0;      // index used by fallback timer
+  let fallbackTimer = null;
+  let usingBoundaryEvents = false; // becomes true if onboundary fires reliably
+
+  // Platform detection
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+  // Prepare text into spans
+  function renderText(text){
+    // split by spaces but keep punctuation attached to words
+    const words = text.trim().split(/\s+/);
+    textDisplay.innerHTML = '';
+    wordSpans = words.map(w=>{
+      const span = document.createElement('span');
+      span.textContent = w + ' ';
+      textDisplay.appendChild(span);
+      return span;
+    });
+    currentWordIndex = 0;
+  }
+  renderText(DEFAULT_TEXT);
+
+  function clearHighlights(){
+    wordSpans.forEach(s=>s.classList.remove('active'));
+  }
+  function highlightIndex(i){
+    clearHighlights();
+    if(i >= 0 && i < wordSpans.length) wordSpans[i].classList.add('active');
+  }
+
+  // Build mapping from cumulative char lengths to word index (for onboundary charIndex)
+  function findWordIndexFromChar(charIndex){
+    let cum = 0;
+    for(let i=0;i<wordSpans.length;i++){
+      cum += (wordSpans[i].textContent || '').length;
+      if(charIndex < cum) return i;
     }
-    prepareText(text);
+    return wordSpans.length - 1;
+  }
 
-    function clearHighlights(){
-      wordSpans.forEach(s=>s.classList.remove("active"));
-    }
+  // Load voices into select
+  function populateVoices(){
+    voices = synth.getVoices().sort((a,b)=> a.lang.localeCompare(b.lang));
+    voiceSelect.innerHTML = voices.map((v,i)=>{
+      return `<option value="${i}">${v.name} — ${v.lang}${v.localService ? ' (local)' : ''}</option>`;
+    }).join('');
+    // prefer en-IN, en-GB, en-US
+    let idx = voices.findIndex(v=>/en-?IN/i.test(v.lang));
+    if(idx < 0) idx = voices.findIndex(v=>/en-?GB/i.test(v.lang));
+    if(idx < 0) idx = voices.findIndex(v=>/en-?US/i.test(v.lang));
+    if(idx < 0) idx = 0;
+    if(idx >= 0) voiceSelect.value = String(idx);
+  }
+  populateVoices();
+  if(typeof speechSynthesis !== 'undefined' && 'onvoiceschanged' in speechSynthesis){
+    speechSynthesis.onvoiceschanged = populateVoices;
+  }
 
-    function highlightByCharIndex(charIndex){
-      let count = 0;
-      for(let i=0;i<wordSpans.length;i++){
-        count += wordSpans[i].textContent.length;
-        if(charIndex < count){
-          clearHighlights();
-          wordSpans[i].classList.add("active");
-          break;
-        }
+  // Cancel any running fallback timer
+  function stopFallbackTimer(){
+    if(fallbackTimer) { clearInterval(fallbackTimer); fallbackTimer = null; }
+  }
+
+  // Start fallback timer (approximate highlighting). It will only advance when synth.speaking && !synth.paused
+  function startFallbackTimer() {
+    stopFallbackTimer();
+    // choose base interval depending on rate: faster rate -> shorter interval
+    const rate = Number(rateEl.value) || 1;
+    // words/sec approx: baseline 3.8 words/sec at rate=1 (tweakable)
+    const baseWordsPerSec = 3.8 * rate;
+    const intervalMs = Math.max(90, Math.round(1000 / baseWordsPerSec)); // never too fast
+
+    fallbackTimer = setInterval(()=>{
+      // only advance when speech is active and not paused
+      if(!synth.speaking || synth.paused) return;
+      // if boundary events started working, stop fallback
+      if(usingBoundaryEvents){ stopFallbackTimer(); return; }
+
+      // highlight current index, then advance
+      if(currentWordIndex < wordSpans.length){
+        highlightIndex(currentWordIndex);
+        currentWordIndex++;
+      } else {
+        stopFallbackTimer();
       }
+    }, intervalMs);
+  }
+
+  // Main speak function
+  function speak(fromScratch = true){
+    // If paused -> resume
+    if(synth.paused){
+      synth.resume();
+      // resume fallback progression if used
+      if(!usingBoundaryEvents && isMobile && !fallbackTimer) startFallbackTimer();
+      return;
     }
 
-    function loadVoices(){
-      voices = synth.getVoices();
-    }
-    loadVoices();
-    if(speechSynthesis.onvoiceschanged!==undefined){
-      speechSynthesis.onvoiceschanged=loadVoices;
-    }
-
-    function speak(){
-      if(synth.speaking){ synth.cancel(); }
-      clearHighlights();
-      clearInterval(fallbackTimer);
-
-      const utter = new SpeechSynthesisUtterance(text);
-      currentUtterance = utter;
-
-      if(voices.length>0) utter.voice = voices.find(v=>v.lang.startsWith("en")) || voices[0];
-      utter.lang = utter.voice ? utter.voice.lang : "en-US";
-
-      utter.onstart = ()=>{
-        // fallback highlight for iOS/Android
-        if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-          let i = 0;
-          fallbackTimer = setInterval(()=>{
-            if(i<wordSpans.length){
-              clearHighlights();
-              wordSpans[i].classList.add("active");
-              i++;
-            } else {
-              clearInterval(fallbackTimer);
-            }
-          }, 250); // approx 4 words/sec
-        }
-      };
-
-      utter.onend = ()=>{
-        clearHighlights();
-        clearInterval(fallbackTimer);
-      };
-
-      utter.onerror = ()=>{
-        clearHighlights();
-        clearInterval(fallbackTimer);
-      };
-
-      utter.onboundary = (event)=>{
-        if(event.name==="word" || event.charIndex!==undefined){
-          highlightByCharIndex(event.charIndex||0);
-        }
-      };
-
-      synth.speak(utter);
-    }
-
-    function stop(){
+    // If already speaking and not paused, restart speech (cancel & fresh start)
+    if(synth.speaking){
       synth.cancel();
+      stopFallbackTimer();
+    }
+
+    // if starting fresh, reset pointers
+    if(fromScratch){
+      currentWordIndex = 0;
       clearHighlights();
-      clearInterval(fallbackTimer);
     }
 
-    // Autoplay attempt
-    function tryAutoplay(){
+    const text = textDisplay.textContent.trim();
+    if(!text) return;
+
+    const utter = new SpeechSynthesisUtterance(text);
+    currentUtterance = utter;
+
+    const v = voices[Number(voiceSelect.value)] || voices[0] || null;
+    if(v){ utter.voice = v; utter.lang = v.lang; }
+    else { utter.lang = 'en-IN'; }
+
+    utter.rate = Number(rateEl.value) || 1;
+    utter.pitch = Number(pitchEl.value) || 1;
+
+    // Reset boundary usage flag each start; if onboundary fires we set it true
+    usingBoundaryEvents = false;
+
+    // onstart: ensure fallback timer on mobile (some browsers delay onstart; we'll ensure fallback regardless)
+    utter.onstart = () => {
+      // If mobile, start fallback timer immediately (it will only advance when speaking and not paused)
+      if(isMobile){
+        startFallbackTimer();
+      }
+    };
+
+    // onboundary: desktop browsers usually provide accurate events
+    utter.onboundary = (e) => {
+      // when onboundary works, we stop fallback and rely on precise events
+      if(e && (e.name === 'word' || e.charIndex !== undefined)){
+        usingBoundaryEvents = true;
+        stopFallbackTimer();
+        // some browsers send charIndex, some send word boundaries; try to use charIndex
+        const charIndex = e.charIndex || 0;
+        const idx = findWordIndexFromChar(charIndex);
+        currentWordIndex = idx + 1; // set next fallback index if needed later
+        highlightIndex(idx);
+      }
+    };
+
+    utter.onend = () => {
+      stopFallbackTimer();
+      currentWordIndex = wordSpans.length;
+      // clear highlight at end (brief pause so user sees last word highlighted)
+      setTimeout(clearHighlights, 300);
+    };
+
+    utter.onerror = () => {
+      stopFallbackTimer();
+    };
+
+    synth.speak(utter);
+  }
+
+  // Pause, Resume, Stop handlers
+  function playOrResume(){
+    if(synth.paused){
+      // resume
+      synth.resume();
+      if(isMobile && !usingBoundaryEvents && !fallbackTimer) startFallbackTimer();
+    } else if(!synth.speaking){
+      // fresh start
+      speak(true);
+    }
+    // else already speaking -> do nothing
+  }
+
+  function pauseSpeech(){
+    if(synth.speaking && !synth.paused){
+      synth.pause();
+      // fallback timer remains but will not advance because we check synth.paused inside interval
+    }
+  }
+
+  function stopSpeech(){
+    synth.cancel();
+    stopFallbackTimer();
+    currentWordIndex = 0;
+    clearHighlights();
+  }
+
+  // Wire buttons
+  playBtn.addEventListener('click', playOrResume);
+  pauseBtn.addEventListener('click', pauseSpeech);
+  stopBtn.addEventListener('click', stopSpeech);
+
+  // Keep wordSpans up-to-date if text is changed externally
+  // (if you later allow editing the text, call renderText(newText) and it will sync)
+
+  // Attempt autoplay on load; if blocked show overlay
+  function tryAutoplay(){
+    // small delay for voices to populate
+    setTimeout(()=>{
+      // attempt speak
+      speak(true);
+      // check shortly whether speaking started; if not, show overlay
       setTimeout(()=>{
-        speak();
-        setTimeout(()=>{
-          if(!synth.speaking){
-            showStartOverlay();
-          }
-        },1500);
-      },800);
-    }
+        if(!synth.speaking){
+          showStartOverlay();
+        }
+      }, 1400);
+    }, 700);
+  }
 
-    function showStartOverlay(){
-      if(document.getElementById("startOverlay")) return;
-      const overlay=document.createElement("div");
-      overlay.id="startOverlay";
-      const btn=document.createElement("button");
-      btn.textContent="🔊 Tap to Listen";
-      btn.onclick=()=>{
-        overlay.remove();
-        speak();
-      };
-      overlay.appendChild(btn);
-      document.body.appendChild(overlay);
-    }
+  function showStartOverlay(){
+    if(document.getElementById('startOverlay')) return;
+    const ov = document.createElement('div');
+    ov.id = 'startOverlay';
+    ov.innerHTML = `<div style="text-align:center">
+      <button id="overlayBtn">🔊 Tap to Listen</button>
+      <div style="color:#cbd2ff; margin-top:10px; font-size:13px">Tap anywhere or press the button to allow audio (mobile browsers often block autoplay).</div>
+    </div>`;
+    document.body.appendChild(ov);
+    const b = document.getElementById('overlayBtn');
+    b.addEventListener('click', ()=>{
+      ov.remove();
+      // start/resume speech explicitly on user gesture
+      speak(true);
+    });
+    // also allow tap anywhere to start
+    ov.addEventListener('click', (e)=>{
+      if(e.target === ov){
+        ov.remove();
+        speak(true);
+      }
+    });
+  }
 
-    window.addEventListener("load", tryAutoplay);
+  // initialize: populate voices and try autoplay
+  // (voices may load async; onvoiceschanged will re-populate)
+  window.addEventListener('load', () => {
+    populateVoices();
+    tryAutoplay();
+  });
+
+  // expose small debug (optional)
+  // window._tts = { speak, stopSpeech, pauseSpeech, playOrResume };
+
   </script>
-
 </body>
 </html>
